@@ -1,0 +1,12 @@
+output/
+checkpoints/
+venv/
+__pycache__/
+*.pyc
+*.npy
+*.npz
+*.log
+nohup.out
+nas_storage/
+.DS_Store
+._*
