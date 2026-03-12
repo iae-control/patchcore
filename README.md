@@ -1,76 +1,77 @@
-# PatchCore H-beam Surface Defect Detection
+# H\ud615\uac15 \ud45c\uba74\uacb0\ud568 \ud0d0\uc9c0 \uc2dc\uc2a4\ud15c (PatchCore)
 
-PatchCore-based anomaly detection system for H-beam surface defect inspection at steel manufacturing lines.
+H\ud615\uac15 \uc81c\uc870 \ub77c\uc778\uc758 \ud45c\uba74\uacb0\ud568\uc744 \uc2e4\uc2dc\uac04\uc73c\ub85c \ud0d0\uc9c0\ud558\ub294 \ube44\uc9c0\ub3c4 \ud559\uc2b5 \uae30\ubc18 AI \uc2dc\uc2a4\ud15c\uc785\ub2c8\ub2e4.  
+[PatchCore](https://arxiv.org/abs/2106.08265) (CVPR 2022) \uc54c\uace0\ub9ac\uc998\uc744 \uc0ac\uc6a9\ud558\uba70, **\uc815\uc0c1 \uc774\ubbf8\uc9c0\ub9cc\uc73c\ub85c \ud559\uc2b5**\ud569\ub2c8\ub2e4 \u2014 \uacb0\ud568 \ub77c\ubca8\ub9c1\uc774 \ud544\uc694 \uc5c6\uc2b5\ub2c8\ub2e4.
 
-## Overview
+## \ud575\uc2ec \ud2b9\uc9d5
 
-This system detects surface defects on H-beam steel products using [PatchCore](https://arxiv.org/abs/2106.08265) (CVPR 2022), an unsupervised anomaly detection method that requires **only normal images** for training — no defect labels needed.
+- **\ud0c0\uc77c \uae30\ubc18 \uac80\ucd9c**: 1920x1200 \uc6d0\ubcf8 \uc774\ubbf8\uc9c0\ub97c 256x256 \ud0c0\uc77c\ub85c \ubd84\ud560\ud558\uc5ec \ubbf8\uc138\uacb0\ud568 \ub514\ud14c\uc77c \ubcf4\uc874
+- **\uaddc\uaca9\ubcc4 \uac1c\ubcc4 \ubaa8\ub378**: 53\uaddc\uaca9 x 5\uce74\uba54\ub77c\uadf8\ub8f9 = 265\uac1c \uc804\uc6a9 \ubaa8\ub378
+- **Self-validation**: \ub77c\ubca8 \uc5c6\uc774 3\ub77c\uc6b4\ub4dc \ubc18\ubcf5 \uc815\uc81c\ub85c \uacb0\ud568 \ud63c\uc785 \ub370\uc774\ud130 \uc790\ub3d9 \uc81c\uac70
+- **Ens-MAX \uc559\uc0c1\ube14**: 8\uac1c \ub3c5\ub9bd \ud1b5\uacc4 \uc9c0\ud45c\uc758 z-score MAX \ud310\uc815\uc73c\ub85c \uac15\uac74\ud55c \uacb0\ud568 \ud310\ub2e8
+- **\ube60\ub978 \uaddc\uaca9 \uc804\ud658**: CNN \ubc31\ubcf8(WideResNet-50) \uacf5\uc720, \uba54\ubaa8\ub9ac\ubc45\ud06c\ub9cc \uad50\uccb4\ud558\uc5ec \uc989\uc2dc \ub300\uc751
 
-### Key Features
-
-- **Tile-based detection**: Splits 1920x1200 images into 256x256 tiles, preserving fine defect details
-- **Per-spec models**: 53 H-beam specifications x 5 camera groups = 265 dedicated models
-- **Self-validation**: Automatic 3-round data refinement that removes defect-contaminated images without labels
-- **Ens-MAX ensemble**: 8 independent statistical metrics with z-score MAX decision for robust defect judgment
-- **Fast model switching**: Shared CNN backbone (WideResNet-50) + swappable memory banks per specification
-
-## Architecture
+## \ucc98\ub9ac \ud750\ub984
 
 ```
-H-beam image (1920x1200)
-    |\n    v
-Tile split (256x256 patches)
-    |\n    v
-Feature extraction (WideResNet-50, layers 2+3)
-    |\n    v
-kNN distance to memory bank (coreset)
-    |\n    v
-Anomaly score map -> Ens-MAX judgment
+H\ud615\uac15 \uc774\ubbf8\uc9c0 (1920x1200)
+    |
+    v
+\ud0c0\uc77c \ubd84\ud560 (256x256 \ud328\uce58)
+    |
+    v
+\ud53c\ucc98 \ucd94\ucd9c (WideResNet-50, layer 2+3)
+    |
+    v
+\uba54\ubaa8\ub9ac\ubc45\ud06c(coreset) \ub300\ube44 kNN \uac70\ub9ac \uacc4\uc0b0
+    |
+    v
+\uc774\uc0c1\uce58 \uc810\uc218\ub9f5 -> Ens-MAX \ud310\uc815
 ```
 
-## Project Structure
+## \ud504\ub85c\uc81d\ud2b8 \uad6c\uc870
 
 ```
 src/
-  config.py          # Configuration (NAS paths, camera groups, thresholds)
-  dataset.py         # NAS data loading with RAM preload
-  patchcore.py       # Core PatchCore implementation
-  self_validation.py # Self-validation data refinement
-  tile_mask.py       # Dynamic tile masking per camera group
-  utils.py           # Spec discovery, trainable spec filtering
-train_v4_reorder.py  # Main training script (large-first ordering)
-train_gpu1_reverse.py# Reverse-order training for dual GPU setup
-inference.py         # Single-image inference with visualization
-eval_all_v3.py       # Batch evaluation across all specs
-monitor.py           # Training progress monitor
-scan_nas.py          # NAS folder scanner
+  config.py          # \uc124\uc815 (NAS \uacbd\ub85c, \uce74\uba54\ub77c \uadf8\ub8f9, \uc784\uacc4\uac12)
+  dataset.py         # NAS \ub370\uc774\ud130 \ub85c\ub529 \ubc0f RAM \ud504\ub9ac\ub85c\ub4dc
+  patchcore.py       # PatchCore \ud575\uc2ec \uad6c\ud604
+  self_validation.py # Self-validation \ub370\uc774\ud130 \uc815\uc81c
+  tile_mask.py       # \uce74\uba54\ub77c \uadf8\ub8f9\ubcc4 \ub3d9\uc801 \ud0c0\uc77c \ub9c8\uc2a4\ud0b9
+  utils.py           # \uaddc\uaca9 \ud0d0\uc0c9, \ud559\uc2b5 \uac00\ub2a5 \uaddc\uaca9 \ud544\ud130\ub9c1
+train_v4_reorder.py  # \uba54\uc778 \ud559\uc2b5 \uc2a4\ud06c\ub9bd\ud2b8 (\ub300\ud615 \uaddc\uaca9 \uc6b0\uc120)
+train_gpu1_reverse.py# GPU1 \uc5ed\uc21c \ud559\uc2b5 (\ub4c0\uc5bc GPU \ubcd1\ub82c)
+inference.py         # \ub2e8\uc77c \uc774\ubbf8\uc9c0 \ucd94\ub860 \ubc0f \uc2dc\uac01\ud654
+eval_all_v3.py       # \uc804\uccb4 \uaddc\uaca9 \uc77c\uad04 \ud3c9\uac00
+monitor.py           # \ud559\uc2b5 \uc9c4\ud589 \ubaa8\ub2c8\ud130\ub9c1
+scan_nas.py          # NAS \ud3f4\ub354 \uc2a4\uce90\ub108
 ```
 
-## Training
+## \ud559\uc2b5 \ubc29\ubc95
 
-### Single spec
+### \ub2e8\uc77c \uaddc\uaca9
 ```bash
 CUDA_VISIBLE_DEVICES=0 python train_v4_reorder.py --spec 700x300 --resume
 ```
 
-### All specs (dual GPU)
+### \uc804\uccb4 \uaddc\uaca9 (\ub4c0\uc5bc GPU)
 ```bash
-# GPU 0: large specs first
+# GPU 0: \ub300\ud615 \uaddc\uaca9\ubd80\ud130 \uc21c\ucc28\uc801\uc73c\ub85c
 CUDA_VISIBLE_DEVICES=0 nohup python -u train_v4_reorder.py --all --resume >> train_gpu0.log 2>&1 &
 
-# GPU 1: small specs first (reverse order)
+# GPU 1: \uc18c\ud615 \uaddc\uaca9\ubd80\ud130 \uc5ed\uc21c\uc73c\ub85c
 CUDA_VISIBLE_DEVICES=1 nohup python -u train_gpu1_reverse.py >> train_gpu1.log 2>&1 &
 ```
 
-### Training output
+### \ud559\uc2b5 \uacb0\uacfc\ubb3c
 ```
-output/{spec_key}/group_{1-5}/
-  memory_bank.npy    # Coreset features
-  threshold.json     # MAD-based threshold (k=3.5)
-  self_val_stats.json# Self-validation statistics
+output/{\uaddc\uaca9}/group_{1-5}/
+  memory_bank.npy    # Coreset \ud53c\ucc98
+  threshold.json     # MAD \uae30\ubc18 \uc784\uacc4\uac12 (k=3.5)
+  self_val_stats.json# Self-validation \ud1b5\uacc4
 ```
 
-## Inference
+## \ucd94\ub860
 
 ```python
 from src.patchcore import PatchCoreModel
@@ -79,50 +80,41 @@ model = PatchCoreModel("output/700x300/group_1")
 score_map, max_score = model.predict(image)
 ```
 
-## Camera Groups
+## \uce74\uba54\ub77c \uadf8\ub8f9
 
-| Group | Cameras | Surface |
-|-------|---------|--------|
-| 1 | 1, 10 | Web front |
-| 2 | 2, 9 | Flange top outer |
-| 3 | 3, 8 | Flange top inner |
-| 4 | 4, 7 | Fillet bottom |
-| 5 | 5, 6 | Flange bottom inner |
+| \uadf8\ub8f9 | \uce74\uba54\ub77c | \ucd2c\uc601 \ubd80\uc704 |
+|------|---------|----------|
+| 1 | 1, 10 | \uc6f9 \uc804\uba74 |
+| 2 | 2, 9 | \ud50c\ub79c\uc9c0 \uc0c1\ubd80 \uc678\uba74 |
+| 3 | 3, 8 | \ud50c\ub79c\uc9c0 \uc0c1\ubd80 \ub0b4\uba74 |
+| 4 | 4, 7 | \ud544\ub9bf \ud558\ubd80 |
+| 5 | 5, 6 | \ud50c\ub79c\uc9c0 \ud558\ubd80 \ub0b4\uba74 |
 
-## Self-Validation
+## Self-Validation \uc815\uc81c \uacfc\uc815
 
-The self-validation module automatically detects and removes defect-contaminated tiles from training data through iterative refinement:
+1. **Round 0**: \uc804\uccb4 \ub370\uc774\ud130\ub85c \ud559\uc2b5, \uc774\uc0c1\uce58 \uc810\uc218 \uc0b0\ucd9c
+2. **Round 1**: \uace0\uc810\uc218 \ud0c0\uc77c \uc81c\uc678 (MAD \uc784\uacc4\uac12, k=3.5), \uc7ac\ud559\uc2b5
+3. **Round 2**: \ucd5c\uc885 \uc815\uc81c \ubc0f \uba54\ubaa8\ub9ac\ubc45\ud06c \ud655\uc815
 
-1. **Round 0**: Train on all data, compute anomaly scores
-2. **Round 1**: Exclude high-score tiles (MAD threshold, k=3.5), retrain
-3. **Round 2**: Final refinement pass
+\uc218\ub3d9 \ub77c\ubca8\ub9c1 \uc5c6\uc774 \ud559\uc2b5 \ub370\uc774\ud130 \ud488\uc9c8\uc744 \uc790\ub3d9\uc73c\ub85c \ud655\ubcf4\ud569\ub2c8\ub2e4.
 
-This eliminates the need for manual defect labeling in training data.
-
-## Requirements
+## \uc694\uad6c\uc0ac\ud56d
 
 - Python 3.10+
 - PyTorch 2.0+ (CUDA)
-- NVIDIA GPU with 24GB+ VRAM (tested on A40, L40S)
-- 128GB+ RAM (for NAS image preloading)
+- NVIDIA GPU 24GB+ VRAM (A40, L40S \ud14c\uc2a4\ud2b8 \uc644\ub8cc)
+- RAM 128GB+ (NAS \uc774\ubbf8\uc9c0 \ud504\ub9ac\ub85c\ub4dc\uc6a9)
 
-## Hardware
-
-Developed and tested on:
-- 2x NVIDIA A40 (48GB each)
-- 256GB RAM
-- NFS-mounted NAS (Synology) for image storage
-
-## References
+## \ucc38\uace0\ubb38\ud5cc
 
 - [Towards Total Recall in Industrial Anomaly Detection](https://arxiv.org/abs/2106.08265) - Roth et al., CVPR 2022
 - [WideResNet](https://arxiv.org/abs/1605.07146) - Zagoruyko & Komodakis, 2016
 
-## License
+## \ub77c\uc774\uc120\uc2a4
 
 MIT
 
-## Author
+## \uc800\uc790
 
-Sanghyuk Jung (jsh@iae.re.kr)  
-Institute for Advanced Engineering (IAE)
+\uc815\uc0c1\ud601 (jsh@iae.re.kr)  
+\uace0\ub4f1\uae30\uc220\uc5f0\uad6c\uc6d0 (IAE)
