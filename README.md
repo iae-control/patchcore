@@ -1,77 +1,77 @@
-# H\ud615\uac15 \ud45c\uba74\uacb0\ud568 \ud0d0\uc9c0 \uc2dc\uc2a4\ud15c (PatchCore)
+# H형강 표면결함 탐지 시스템 (PatchCore)
 
-H\ud615\uac15 \uc81c\uc870 \ub77c\uc778\uc758 \ud45c\uba74\uacb0\ud568\uc744 \uc2e4\uc2dc\uac04\uc73c\ub85c \ud0d0\uc9c0\ud558\ub294 \ube44\uc9c0\ub3c4 \ud559\uc2b5 \uae30\ubc18 AI \uc2dc\uc2a4\ud15c\uc785\ub2c8\ub2e4.  
-[PatchCore](https://arxiv.org/abs/2106.08265) (CVPR 2022) \uc54c\uace0\ub9ac\uc998\uc744 \uc0ac\uc6a9\ud558\uba70, **\uc815\uc0c1 \uc774\ubbf8\uc9c0\ub9cc\uc73c\ub85c \ud559\uc2b5**\ud569\ub2c8\ub2e4 \u2014 \uacb0\ud568 \ub77c\ubca8\ub9c1\uc774 \ud544\uc694 \uc5c6\uc2b5\ub2c8\ub2e4.
+H형강 제조 라인의 표면결함을 실시간으로 탐지하는 비지도 학습 기반 AI 시스템입니다.  
+[PatchCore](https://arxiv.org/abs/2106.08265) (CVPR 2022) 알고리즘을 사용하며, **정상 이미지만으로 학습**합니다 — 결함 라벨링이 필요 없습니다.
 
-## \ud575\uc2ec \ud2b9\uc9d5
+## 핵심 특징
 
-- **\ud0c0\uc77c \uae30\ubc18 \uac80\ucd9c**: 1920x1200 \uc6d0\ubcf8 \uc774\ubbf8\uc9c0\ub97c 256x256 \ud0c0\uc77c\ub85c \ubd84\ud560\ud558\uc5ec \ubbf8\uc138\uacb0\ud568 \ub514\ud14c\uc77c \ubcf4\uc874
-- **\uaddc\uaca9\ubcc4 \uac1c\ubcc4 \ubaa8\ub378**: 53\uaddc\uaca9 x 5\uce74\uba54\ub77c\uadf8\ub8f9 = 265\uac1c \uc804\uc6a9 \ubaa8\ub378
-- **Self-validation**: \ub77c\ubca8 \uc5c6\uc774 3\ub77c\uc6b4\ub4dc \ubc18\ubcf5 \uc815\uc81c\ub85c \uacb0\ud568 \ud63c\uc785 \ub370\uc774\ud130 \uc790\ub3d9 \uc81c\uac70
-- **Ens-MAX \uc559\uc0c1\ube14**: 8\uac1c \ub3c5\ub9bd \ud1b5\uacc4 \uc9c0\ud45c\uc758 z-score MAX \ud310\uc815\uc73c\ub85c \uac15\uac74\ud55c \uacb0\ud568 \ud310\ub2e8
-- **\ube60\ub978 \uaddc\uaca9 \uc804\ud658**: CNN \ubc31\ubcf8(WideResNet-50) \uacf5\uc720, \uba54\ubaa8\ub9ac\ubc45\ud06c\ub9cc \uad50\uccb4\ud558\uc5ec \uc989\uc2dc \ub300\uc751
+- **타일 기반 검출**: 1920x1200 원본 이미지를 256x256 타일로 분할하여 미세결함 디테일 보존
+- **규격별 개별 모델**: 53규격 x 5카메라그룹 = 265개 전용 모델
+- **Self-validation**: 라벨 없이 3라운드 반복 정제로 결함 혼입 데이터 자동 제거
+- **Ens-MAX 앙상블**: 8개 독립 통계 지표의 z-score MAX 판정으로 강건한 결함 판단
+- **빠른 규격 전환**: CNN 백본(WideResNet-50) 공유, 메모리뱅크만 교체하여 즉시 대응
 
-## \ucc98\ub9ac \ud750\ub984
+## 처리 흐름
 
 ```
-H\ud615\uac15 \uc774\ubbf8\uc9c0 (1920x1200)
+H형강 이미지 (1920x1200)
     |
     v
-\ud0c0\uc77c \ubd84\ud560 (256x256 \ud328\uce58)
+타일 분할 (256x256 패치)
     |
     v
-\ud53c\ucc98 \ucd94\ucd9c (WideResNet-50, layer 2+3)
+피처 추출 (WideResNet-50, layer 2+3)
     |
     v
-\uba54\ubaa8\ub9ac\ubc45\ud06c(coreset) \ub300\ube44 kNN \uac70\ub9ac \uacc4\uc0b0
+메모리뱅크(coreset) 대비 kNN 거리 계산
     |
     v
-\uc774\uc0c1\uce58 \uc810\uc218\ub9f5 -> Ens-MAX \ud310\uc815
+이상치 점수맵 -> Ens-MAX 판정
 ```
 
-## \ud504\ub85c\uc81d\ud2b8 \uad6c\uc870
+## 프로젝트 구조
 
 ```
 src/
-  config.py          # \uc124\uc815 (NAS \uacbd\ub85c, \uce74\uba54\ub77c \uadf8\ub8f9, \uc784\uacc4\uac12)
-  dataset.py         # NAS \ub370\uc774\ud130 \ub85c\ub529 \ubc0f RAM \ud504\ub9ac\ub85c\ub4dc
-  patchcore.py       # PatchCore \ud575\uc2ec \uad6c\ud604
-  self_validation.py # Self-validation \ub370\uc774\ud130 \uc815\uc81c
-  tile_mask.py       # \uce74\uba54\ub77c \uadf8\ub8f9\ubcc4 \ub3d9\uc801 \ud0c0\uc77c \ub9c8\uc2a4\ud0b9
-  utils.py           # \uaddc\uaca9 \ud0d0\uc0c9, \ud559\uc2b5 \uac00\ub2a5 \uaddc\uaca9 \ud544\ud130\ub9c1
-train_v4_reorder.py  # \uba54\uc778 \ud559\uc2b5 \uc2a4\ud06c\ub9bd\ud2b8 (\ub300\ud615 \uaddc\uaca9 \uc6b0\uc120)
-train_gpu1_reverse.py# GPU1 \uc5ed\uc21c \ud559\uc2b5 (\ub4c0\uc5bc GPU \ubcd1\ub82c)
-inference.py         # \ub2e8\uc77c \uc774\ubbf8\uc9c0 \ucd94\ub860 \ubc0f \uc2dc\uac01\ud654
-eval_all_v3.py       # \uc804\uccb4 \uaddc\uaca9 \uc77c\uad04 \ud3c9\uac00
-monitor.py           # \ud559\uc2b5 \uc9c4\ud589 \ubaa8\ub2c8\ud130\ub9c1
-scan_nas.py          # NAS \ud3f4\ub354 \uc2a4\uce90\ub108
+  config.py          # 설정 (NAS 경로, 카메라 그룹, 임계값)
+  dataset.py         # NAS 데이터 로딩 및 RAM 프리로드
+  patchcore.py       # PatchCore 핵심 구현
+  self_validation.py # Self-validation 데이터 정제
+  tile_mask.py       # 카메라 그룹별 동적 타일 마스킹
+  utils.py           # 규격 탐색, 학습 가능 규격 필터링
+train_v4_reorder.py  # 메인 학습 스크립트 (대형 규격 우선)
+train_gpu1_reverse.py# GPU1 역순 학습 (듀얼 GPU 병렬)
+inference.py         # 단일 이미지 추론 및 시각화
+eval_all_v3.py       # 전체 규격 일괄 평가
+monitor.py           # 학습 진행 모니터링
+scan_nas.py          # NAS 폴더 스캐너
 ```
 
-## \ud559\uc2b5 \ubc29\ubc95
+## 학습 방법
 
-### \ub2e8\uc77c \uaddc\uaca9
+### 단일 규격
 ```bash
 CUDA_VISIBLE_DEVICES=0 python train_v4_reorder.py --spec 700x300 --resume
 ```
 
-### \uc804\uccb4 \uaddc\uaca9 (\ub4c0\uc5bc GPU)
+### 전체 규격 (듀얼 GPU)
 ```bash
-# GPU 0: \ub300\ud615 \uaddc\uaca9\ubd80\ud130 \uc21c\ucc28\uc801\uc73c\ub85c
+# GPU 0: 대형 규격부터 순차적으로
 CUDA_VISIBLE_DEVICES=0 nohup python -u train_v4_reorder.py --all --resume >> train_gpu0.log 2>&1 &
 
-# GPU 1: \uc18c\ud615 \uaddc\uaca9\ubd80\ud130 \uc5ed\uc21c\uc73c\ub85c
+# GPU 1: 소형 규격부터 역순으로
 CUDA_VISIBLE_DEVICES=1 nohup python -u train_gpu1_reverse.py >> train_gpu1.log 2>&1 &
 ```
 
-### \ud559\uc2b5 \uacb0\uacfc\ubb3c
+### 학습 결과물
 ```
-output/{\uaddc\uaca9}/group_{1-5}/
-  memory_bank.npy    # Coreset \ud53c\ucc98
-  threshold.json     # MAD \uae30\ubc18 \uc784\uacc4\uac12 (k=3.5)
-  self_val_stats.json# Self-validation \ud1b5\uacc4
+output/{규격}/group_{1-5}/
+  memory_bank.npy    # Coreset 피처
+  threshold.json     # MAD 기반 임계값 (k=3.5)
+  self_val_stats.json# Self-validation 통계
 ```
 
-## \ucd94\ub860
+## 추론
 
 ```python
 from src.patchcore import PatchCoreModel
@@ -80,41 +80,41 @@ model = PatchCoreModel("output/700x300/group_1")
 score_map, max_score = model.predict(image)
 ```
 
-## \uce74\uba54\ub77c \uadf8\ub8f9
+## 카메라 그룹
 
-| \uadf8\ub8f9 | \uce74\uba54\ub77c | \ucd2c\uc601 \ubd80\uc704 |
+| 그룹 | 카메라 | 촬영 부위 |
 |------|---------|----------|
-| 1 | 1, 10 | \uc6f9 \uc804\uba74 |
-| 2 | 2, 9 | \ud50c\ub79c\uc9c0 \uc0c1\ubd80 \uc678\uba74 |
-| 3 | 3, 8 | \ud50c\ub79c\uc9c0 \uc0c1\ubd80 \ub0b4\uba74 |
-| 4 | 4, 7 | \ud544\ub9bf \ud558\ubd80 |
-| 5 | 5, 6 | \ud50c\ub79c\uc9c0 \ud558\ubd80 \ub0b4\uba74 |
+| 1 | 1, 10 | 웹 전면 |
+| 2 | 2, 9 | 플랜지 상부 외면 |
+| 3 | 3, 8 | 플랜지 상부 내면 |
+| 4 | 4, 7 | 필릿 하부 |
+| 5 | 5, 6 | 플랜지 하부 내면 |
 
-## Self-Validation \uc815\uc81c \uacfc\uc815
+## Self-Validation 정제 과정
 
-1. **Round 0**: \uc804\uccb4 \ub370\uc774\ud130\ub85c \ud559\uc2b5, \uc774\uc0c1\uce58 \uc810\uc218 \uc0b0\ucd9c
-2. **Round 1**: \uace0\uc810\uc218 \ud0c0\uc77c \uc81c\uc678 (MAD \uc784\uacc4\uac12, k=3.5), \uc7ac\ud559\uc2b5
-3. **Round 2**: \ucd5c\uc885 \uc815\uc81c \ubc0f \uba54\ubaa8\ub9ac\ubc45\ud06c \ud655\uc815
+1. **Round 0**: 전체 데이터로 학습, 이상치 점수 산출
+2. **Round 1**: 고점수 타일 제외 (MAD 임계값, k=3.5), 재학습
+3. **Round 2**: 최종 정제 및 메모리뱅크 확정
 
-\uc218\ub3d9 \ub77c\ubca8\ub9c1 \uc5c6\uc774 \ud559\uc2b5 \ub370\uc774\ud130 \ud488\uc9c8\uc744 \uc790\ub3d9\uc73c\ub85c \ud655\ubcf4\ud569\ub2c8\ub2e4.
+수동 라벨링 없이 학습 데이터 품질을 자동으로 확보합니다.
 
-## \uc694\uad6c\uc0ac\ud56d
+## 요구사항
 
 - Python 3.10+
 - PyTorch 2.0+ (CUDA)
-- NVIDIA GPU 24GB+ VRAM (A40, L40S \ud14c\uc2a4\ud2b8 \uc644\ub8cc)
-- RAM 128GB+ (NAS \uc774\ubbf8\uc9c0 \ud504\ub9ac\ub85c\ub4dc\uc6a9)
+- NVIDIA GPU 24GB+ VRAM (A40, L40S 테스트 완료)
+- RAM 128GB+ (NAS 이미지 프리로드용)
 
-## \ucc38\uace0\ubb38\ud5cc
+## 참고문헌
 
 - [Towards Total Recall in Industrial Anomaly Detection](https://arxiv.org/abs/2106.08265) - Roth et al., CVPR 2022
 - [WideResNet](https://arxiv.org/abs/1605.07146) - Zagoruyko & Komodakis, 2016
 
-## \ub77c\uc774\uc120\uc2a4
+## 라이선스
 
 MIT
 
-## \uc800\uc790
+## 저자
 
-\uc815\uc0c1\ud601 (jsh@iae.re.kr)  
-\uace0\ub4f1\uae30\uc220\uc5f0\uad6c\uc6d0 (IAE)
+정상혁 (jsh@iae.re.kr)  
+고등기술연구원 (IAE)
