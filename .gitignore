@@ -1,4 +1,4 @@
-output/
+output*/
 checkpoints/
 venv/
 __pycache__/
@@ -10,3 +10,12 @@ nohup.out
 nas_storage/
 .DS_Store
 ._*
+camera_samples/
+backup_v1/
+backup_v2/
+nas_inventory.json
+nas_scan.json
+*.onnx
+*.trt
+*.engine
+local_storage/

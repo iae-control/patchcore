@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from src import config
+from src.ram_lock import RAMPreloadLock
 from src.utils import get_image_paths, tile_positions
 
 # RAM limit for image cache (bytes)
@@ -79,7 +80,12 @@ class TileDataset(Dataset):
         self._preload(sorted(unique_paths))
 
     def _preload(self, paths: list):
-        """Preload and resize images into RAM cache."""
+        """Preload and resize images into RAM cache (with cross-process lock)."""
+        with RAMPreloadLock():
+            self._preload_inner(paths)
+
+    def _preload_inner(self, paths: list):
+        """Actual preload logic."""
         avail = psutil.virtual_memory().available
         limit = min(RAM_CACHE_LIMIT, int(avail * 0.85))
         # Estimate per-image size: 960*600*3 = ~1.7MB numpy array
